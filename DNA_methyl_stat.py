@@ -1,4 +1,4 @@
-#! python
+#! /bin/env python
 
 import getopt
 import re
@@ -16,6 +16,9 @@ binom_test_result = None
 pvalue_cutoff = 0.05
 binom_test_result_max_line = None
 output = None
+types = []
+
+attributes = []
 
 
 ########################################################
@@ -38,7 +41,7 @@ def read_gff(ingff,types_included=['gene'],target_regexps=['ID']):
     
     
 def generate_indb(gff_objs):
-    indb = "./lincRNA_gff.sqlite3"
+    indb = "./gff.sqlite3"
     os.system("rm -rf " + indb)
     cx = sqlite3.connect(indb)
     cu = cx.cursor()
@@ -120,8 +123,8 @@ def add_quotes(item):
 ########################################################
 opts, args = getopt.getopt(
     sys.argv[1:],
-    '',
-    ["indb=","lincRNA_gff=","gff=","binom_test_result=","pvalue_cutoff=","head=","output=","out="],
+    't:',
+    ["indb=","lincRNA_gff=","gff=","binom_test_result=","pvalue_cutoff=","head=","output=","out=","type="],
 )
 
 for opt,value in opts:
@@ -129,6 +132,12 @@ for opt,value in opts:
         indb = value
     elif opt == "--lincRNA_gff" or opt == "--gff":
         lincRNA_gff = value
+    elif opt == "--type":
+        for i in value.split(','):
+            types.append(value)
+    elif opt == "-t":
+        for i in value.split(','):
+            attributes.append(value)
     elif opt == "--binom_test_result":
         binom_test_result = value
     elif opt == "--pvalue_cutoff":
@@ -139,8 +148,14 @@ for opt,value in opts:
         output = value
 
 
+if not attributes:
+    attributes = ['ID']
+if not types:
+    raise "types should be given by --type. Exiting ......"
+
+
 ########################################################
-gff_objs = read_gff(lincRNA_gff, "lincRNA")
+gff_objs = read_gff(lincRNA_gff, types, attributes)
 
 if not indb:
     indb = generate_indb(gff_objs)

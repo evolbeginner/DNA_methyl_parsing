@@ -4,9 +4,6 @@ import sys
 import sqlite3
 import getopt
 import os
-import re
-
-from subprocess import call
 
 
 ################################################################
@@ -22,7 +19,6 @@ binomialMethCall = os.path.join(os.path.dirname(__file__),"binomialMethCall.py")
 is_autp_errorRate = False
 errorRate = 0.01
 is_auto_errorRate = False
-chrCs = ["chrC"]
 
 
 ################################################################
@@ -89,14 +85,14 @@ def sort_db(indb, is_sort=False):
     return(fetch_all_result_list)
 
 
-def output_coor_list(coor_list, output=None, is_auto_errorRate=False, chrCs=["chrC"]):
+def output_coor_list(coor_list, output=None, is_auto_errorRate=False):
     chrC={'methyl':0,'unmethyl':0}
     estimated_errorRate = None
 
     if output:
         fh = open(output, 'w')
         for i in coor_list:
-            if is_auto_errorRate and str(i[0]) in chrCs:
+            if is_auto_errorRate and i[0] == "chrC":
                 chrC['methyl'] += i[2]
                 chrC['unmethyl'] += i[3]
             fh.write("\t".join(map(lambda x: str(x),i))+"\n")
@@ -104,7 +100,7 @@ def output_coor_list(coor_list, output=None, is_auto_errorRate=False, chrCs=["ch
 
     else:
         for i in coor_list:
-            if is_auto_errorRate and i[0] in chrCs:
+            if is_auto_errorRate and i[0] == "chrC":
                 chrC['methyl'] += i[2]
                 chrC['unmethyl'] += i[3]
             print "\t".join(map(lambda x: str(x),i))
@@ -125,8 +121,8 @@ def add_quotes(item):
 
 
 def binom_test_aggregate(output, binomialMethCall, errorRate):
-    cmd_arr = ["python",binomialMethCall,"--combined",output,"--errorRate",str(errorRate)]
-    call(cmd_arr)
+    cmd = ' '.join(["python",binomialMethCall,"--combined",output,"--errorRate",str(errorRate)])
+    os.system(cmd)
 
 
 
@@ -134,7 +130,7 @@ def binom_test_aggregate(output, binomialMethCall, errorRate):
 opts, args = getopt.getopt(
     sys.argv[1:],
     "b:",
-    ["bismark_file=","bismark_extraction_file=","indb=","outdir=","output=","binom_test","errorRate=","force","sort","auto_errorRate","chrC="]
+    ["bismark_file=","bismark_extraction_file=","indb=","outdir=","output=","binom_test","errorRate=","force","sort","auto_errorRate"]
 )
 
 for opt, value in opts:
@@ -156,13 +152,6 @@ for opt, value in opts:
         errorRate = float(value)
     elif opt == "--auto_errorRate":
         is_auto_errorRate = True
-    elif opt == "--chrC":
-        chrCs = []
-        for i in value.split(","):
-            chrCs.append(i)
-            print chrCs
-        print "\t".join(["chrC:", "\t".join(chrCs)])
-
 
 if not outdir:
     if not indb:
@@ -177,11 +166,8 @@ else:
             sys.exit()
     os.system("mkdir -p " + outdir)
 
-if not output:
-    output = os.path.join(outdir, "final_results")
-    print output
-
 param_out_fh = open(os.path.join(outdir, "params"),'w')
+    
 
 if not indb:
     indb_outdir = os.path.join(outdir, "sqlite3_database")
@@ -214,8 +200,8 @@ if bismark_extraction_files:
 # after indb has been ready
 coor_list = sort_db(indb, is_sort)
 
-estimated_errorRate = output_coor_list(coor_list, output, is_auto_errorRate, chrCs)
-if is_auto_errorRate:
+estimated_errorRate = output_coor_list(coor_list, output, is_auto_errorRate)
+if estimated_errorRate:
     errorRate = estimated_errorRate
     param_out_fh.write("errorRate\t"+str(errorRate)+"\n")
 

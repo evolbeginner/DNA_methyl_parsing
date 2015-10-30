@@ -1,4 +1,4 @@
-#! python
+#! /bin/env python
 
 import getopt
 import sys

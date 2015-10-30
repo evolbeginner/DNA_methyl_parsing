@@ -1,4 +1,4 @@
-#! python
+#! /bin/env python
 
 import getopt
 import sys
@@ -34,7 +34,9 @@ def unpackLine(chrm,coord,*data):
 def extractLine(line):
     chrm,coord,data = unpackLine(*line)
     if not chrm.startswith("chr"):
-        chrm = "chr"+chrm
+        # editted by Sishuo Wang
+        #chrm = "chr"+chrm
+        pass
     return (chrm,coord,data)
      
 
